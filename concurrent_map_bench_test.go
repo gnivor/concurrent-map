@@ -20,7 +20,6 @@ func BenchmarkItems(b *testing.B) {
 
 func BenchmarkItemsSimple(b *testing.B) {
 	m := New()
-
 	// Insert 10000 elements.
 	for i := 0; i < 10000; i++ {
 		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
@@ -52,9 +51,12 @@ func BenchmarkMapItems(b *testing.B) {
 	for i := 0; i < 10000; i++ {
 		m[strconv.Itoa(i)] = Animal{strconv.Itoa(i)}
 	}
+	var mtx sync.RWMutex
 	for i := 0; i < b.N; i++ {
+		mtx.Lock()
 		for range m {
 		}
+		mtx.Unlock()
 	}
 }
 
@@ -71,7 +73,78 @@ func BenchmarkSyncMapItems(b *testing.B) {
 	}
 }
 
-func BenchmarkMutexMapSetRangeItems(b *testing.B) {
+func BenchmarkMultiRangeItemsMutexMap(b *testing.B) {
+	m := make(map[string]Animal)
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m[strconv.Itoa(i)] = Animal{strconv.Itoa(i)}
+	}
+	finished := make(chan struct{}, b.N)
+	var mtx sync.RWMutex
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			mtx.RLock()
+			for range m {
+			}
+			mtx.RUnlock()
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < b.N; i++ {
+		<-finished
+	}
+}
+
+func BenchmarkMultiRangeItemsSyncMap(b *testing.B) {
+	var m sync.Map
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Store(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+	finished := make(chan struct{}, b.N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			m.Range(func(k, v interface{}) bool {
+				return true
+			})
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < b.N; i++ {
+		<-finished
+	}
+}
+
+func BenchmarkMultiRangeItemsGetItemsUnsafe(b *testing.B) {
+	m := New()
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+	finished := make(chan struct{}, b.N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for _, ms := range m {
+				ms.RLock()
+				for range ms.GetItemsUnsafe() {
+				}
+				ms.RUnlock()
+			}
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < b.N; i++ {
+		<-finished
+	}
+}
+
+func BenchmarkMultiSetRangeItemsMutexMap(b *testing.B) {
 	m := make(map[string]Animal)
 	// Insert 10000 elements.
 	for i := 0; i < 10000; i++ {
@@ -103,7 +176,7 @@ func BenchmarkMutexMapSetRangeItems(b *testing.B) {
 	}
 }
 
-func BenchmarkSyncMapSetRangeItems(b *testing.B) {
+func BenchmarkMultiSetRangeItemsSyncMap(b *testing.B) {
 	var m sync.Map
 	// Insert 10000 elements.
 	for i := 0; i < 10000; i++ {
@@ -131,7 +204,7 @@ func BenchmarkSyncMapSetRangeItems(b *testing.B) {
 	}
 }
 
-func BenchmarkMapSetGetItemsUnsafe(b *testing.B) {
+func BenchmarkMultiSetRangeItemsGetItemsUnsafe(b *testing.B) {
 	m := New()
 	// Insert 10000 elements.
 	for i := 0; i < 10000; i++ {
