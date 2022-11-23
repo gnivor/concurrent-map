@@ -17,6 +17,12 @@ type ConcurrentMapShared struct {
 	sync.RWMutex // Read Write mutex, guards access to internal map.
 }
 
+// GetItemsUnsafe returns concurrent map shared items
+// This function is not "thread" safe
+func (ms *ConcurrentMapShared) GetItemsUnsafe() map[string]interface{} {
+	return ms.items
+}
+
 // Creates a new concurrent map.
 func New() ConcurrentMap {
 	m := make(ConcurrentMap, SHARD_COUNT)
@@ -247,6 +253,20 @@ func (m ConcurrentMap) Items() map[string]interface{} {
 	return tmp
 }
 
+// ItemsSimple returns all items as map[string]interface{}
+func (m ConcurrentMap) ItemsSimple() map[string]interface{} {
+	tmp := make(map[string]interface{})
+	// Insert items to temporary map.
+	for _, cm := range m {
+		cm.RLock()
+		for k, v := range cm.items {
+			tmp[k] = v
+		}
+		cm.RUnlock()
+	}
+	return tmp
+}
+
 // Iterator callback,called for every key,value found in
 // maps. RLock is held for all calls for a given shard
 // therefore callback sess consistent view of a shard,
@@ -341,3 +361,4 @@ func fnv32(key string) uint32 {
 // 	}
 // 	return nil
 // }
+

@@ -18,6 +18,150 @@ func BenchmarkItems(b *testing.B) {
 	}
 }
 
+func BenchmarkItemsSimple(b *testing.B) {
+	m := New()
+
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+	for i := 0; i < b.N; i++ {
+		m.ItemsSimple()
+	}
+}
+
+func BenchmarkGetItemsUnsafe(b *testing.B) {
+	m := New()
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+	for i := 0; i < b.N; i++ {
+		for _, ms := range m {
+			ms.RLock()
+			for range ms.GetItemsUnsafe() {
+			}
+			ms.RUnlock()
+		}
+	}
+}
+
+func BenchmarkMapItems(b *testing.B) {
+	m := make(map[string]Animal)
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m[strconv.Itoa(i)] = Animal{strconv.Itoa(i)}
+	}
+	for i := 0; i < b.N; i++ {
+		for range m {
+		}
+	}
+}
+
+func BenchmarkSyncMapItems(b *testing.B) {
+	var m sync.Map
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Store(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+	for i := 0; i < b.N; i++ {
+		m.Range(func(k, v interface{}) bool {
+			return true
+		})
+	}
+}
+
+func BenchmarkMutexMapSetRangeItems(b *testing.B) {
+	m := make(map[string]Animal)
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m[strconv.Itoa(-i)] = Animal{strconv.Itoa(-i)}
+	}
+	finished := make(chan struct{}, 2*b.N)
+	var mtx sync.RWMutex
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for j := 0; j < 100; j++ {
+				mtx.Lock()
+				m[strconv.Itoa(j)] = Animal{strconv.Itoa(j)}
+				mtx.Unlock()
+			}
+			finished <- struct{}{}
+		}()
+		go func() {
+			mtx.RLock()
+			for range m {
+			}
+			mtx.RUnlock()
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < 2*b.N; i++ {
+		<-finished
+	}
+}
+
+func BenchmarkSyncMapSetRangeItems(b *testing.B) {
+	var m sync.Map
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Store(strconv.Itoa(-i), Animal{strconv.Itoa(-i)})
+	}
+	finished := make(chan struct{}, 2*b.N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for j := 0; j < 100; j++ {
+				m.Store(strconv.Itoa(j), Animal{strconv.Itoa(j)})
+			}
+			finished <- struct{}{}
+		}()
+		go func() {
+			m.Range(func(k, v interface{}) bool {
+				return true
+			})
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < 2*b.N; i++ {
+		<-finished
+	}
+}
+
+func BenchmarkMapSetGetItemsUnsafe(b *testing.B) {
+	m := New()
+	// Insert 10000 elements.
+	for i := 0; i < 10000; i++ {
+		m.Set(strconv.Itoa(-i), Animal{strconv.Itoa(-i)})
+	}
+	finished := make(chan struct{}, 2*b.N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for j := 0; j < 100; j++ {
+				m.Set(strconv.Itoa(j), Animal{strconv.Itoa(j)})
+			}
+			finished <- struct{}{}
+		}()
+		go func() {
+			for _, ms := range m {
+				ms.RLock()
+				for range ms.GetItemsUnsafe() {
+				}
+				ms.RUnlock()
+			}
+			finished <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < 2*b.N; i++ {
+		<-finished
+	}
+}
+
 func BenchmarkMarshalJson(b *testing.B) {
 	m := New()
 

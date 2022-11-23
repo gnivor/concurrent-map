@@ -379,6 +379,55 @@ func TestItems(t *testing.T) {
 	}
 }
 
+func TestItemsSimple(t *testing.T) {
+	m := New()
+
+	// Insert 100 elements.
+	for i := 0; i < 100; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+
+	items := m.ItemsSimple()
+
+	if len(items) != 100 {
+		t.Error("We should have counted 100 elements.")
+	}
+}
+
+func TestGetItemsUnsafe(t *testing.T) {
+	m := New()
+
+	// Insert 100 elements.
+	targetSum := 0
+	for i := 0; i < 100; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		targetSum += i
+	}
+	itemsNum := 0
+	sumKey := 0
+	sumValue := 0
+	for _, ms := range m {
+		ms.RLock()
+		for k, v := range ms.GetItemsUnsafe() {
+			itemsNum++
+			kn, _ := strconv.Atoi(k)
+			vn, _ := strconv.Atoi(v.(Animal).name)
+			sumKey += kn
+			sumValue += vn
+		}
+		ms.RUnlock()
+	}
+	if itemsNum != 100 {
+		t.Error("We should have counted 100 elements.")
+	}
+	if sumKey != targetSum {
+		t.Error("sumKey != targetSum")
+	}
+	if sumValue != targetSum {
+		t.Error("sumValue != targetSum")
+	}
+}
+
 func TestConcurrent(t *testing.T) {
 	m := New()
 	ch := make(chan int)
@@ -680,3 +729,4 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 		t.Error("We should have counted 200 elements.")
 	}
 }
+
