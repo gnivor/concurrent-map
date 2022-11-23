@@ -11,13 +11,13 @@
 
 ```go
 import (
-	"github.com/orcaman/concurrent-map"
+	"github.com/gnivor/concurrent-map"
 )
 
 ```
 
 ```bash
-go get "github.com/orcaman/concurrent-map"
+go get "github.com/gnivor/concurrent-map"
 ```
 
 现在包被导入到了`cmap`命名空间下
@@ -48,7 +48,7 @@ go get "github.com/orcaman/concurrent-map"
 运行测试:
 
 ```bash
-go test "github.com/orcaman/concurrent-map"
+go test "github.com/gnivor/concurrent-map"
 ```
 
 ## 贡献说明
