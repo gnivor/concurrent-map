@@ -11,13 +11,13 @@
 
 ```go
 import (
-	"github.com/gnivor/concurrent-map"
+	"github.com/gnivor/concurrent-map/v2"
 )
 
 ```
 
 ```bash
-go get "github.com/gnivor/concurrent-map"
+go get "github.com/gnivor/concurrent-map/v2"
 ```
 
 现在包被导入到了`cmap`命名空间下
@@ -28,15 +28,13 @@ go get "github.com/gnivor/concurrent-map"
 ```go
 
 	// 创建一个新的 map.
-	m := cmap.New()
+	m := cmap.New[string]()
 
 	// 设置变量m一个键为“foo”值为“bar”键值对
 	m.Set("foo", "bar")
 
 	// 从m中获取指定键值.
-	if tmp, ok := m.Get("foo"); ok {
-		bar := tmp.(string)
-	}
+	bar, ok := m.Get("foo")
 
 	// 删除键为“foo”的项
 	m.Remove("foo")
@@ -48,7 +46,7 @@ go get "github.com/gnivor/concurrent-map"
 运行测试:
 
 ```bash
-go test "github.com/gnivor/concurrent-map"
+go test "github.com/gnivor/concurrent-map/v2"
 ```
 
 ## 贡献说明
