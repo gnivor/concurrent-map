@@ -1,3 +1,3 @@
-module github.com/gnivor/concurrent-map
+module github.com/gnivor/concurrent-map/v2
 
-go 1.17
+go 1.18

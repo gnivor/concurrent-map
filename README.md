@@ -10,13 +10,13 @@ Import the package:
 
 ```go
 import (
-	"github.com/gnivor/concurrent-map"
+	"github.com/gnivor/concurrent-map/v2"
 )
 
 ```
 
 ```bash
-go get "github.com/gnivor/concurrent-map"
+go get "github.com/gnivor/concurrent-map/v2"
 ```
 
 The package is now imported under the "cmap" namespace.
@@ -26,15 +26,13 @@ The package is now imported under the "cmap" namespace.
 ```go
 
 	// Create a new map.
-	m := cmap.New()
+	m := cmap.New[string]()
 
 	// Sets item within map, sets "bar" under key "foo"
 	m.Set("foo", "bar")
 
 	// Retrieve item from map.
-	if tmp, ok := m.Get("foo"); ok {
-		bar := tmp.(string)
-	}
+	bar, ok := m.Get("foo")
 
 	// Removes item under key "foo"
 	m.Remove("foo")
@@ -46,7 +44,7 @@ For more examples have a look at concurrent_map_test.go.
 Running tests:
 
 ```bash
-go test "github.com/gnivor/concurrent-map"
+go test "github.com/gnivor/concurrent-map/v2"
 ```
 
 ## guidelines for contributing
